@@ -16,6 +16,11 @@ TYPE_ID WholeCell::GetType() const
     return TYPE_ID::UI_TYPE_ID;
 }
 
+size_t WholeCell::GetSize() const
+{
+    return sizeof(size_t);
+}
+
 void DoubleCell::SetData(void * data)
 {
     double * tmp = reinterpret_cast<double *>(data);
@@ -32,6 +37,11 @@ TYPE_ID DoubleCell::GetType() const
     return TYPE_ID::D_TYPE_ID;
 }
 
+size_t DoubleCell::GetSize() const
+{
+    return sizeof(double);
+}
+
 void StringCell::SetData(void * data)
 {
     char * tmp = reinterpret_cast<char *>(data);
@@ -46,4 +56,9 @@ const void * StringCell::GetData() const
 TYPE_ID StringCell::GetType() const
 {
     return TYPE_ID::AARR_TYPE_ID;
+}
+
+size_t StringCell::GetSize() const
+{
+    return m_Data.size();
 }

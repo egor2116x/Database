@@ -139,13 +139,16 @@
     <ClInclude Include="Common.h" />
     <ClInclude Include="DataBase.h" />
     <ClInclude Include="IEncryptor.h" />
+    <ClInclude Include="IMultiThread.h" />
     <ClInclude Include="IReadWriter.h" />
     <ClInclude Include="Table.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Cell.cpp" />
+    <ClCompile Include="Common.cpp" />
     <ClCompile Include="DataBase.cpp" />
     <ClCompile Include="IEncryptor.cpp" />
+    <ClCompile Include="IMultiThread.cpp" />
     <ClCompile Include="IReadWriter.cpp" />
     <ClCompile Include="Table.cpp" />
   </ItemGroup>

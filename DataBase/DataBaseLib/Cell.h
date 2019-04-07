@@ -8,6 +8,7 @@ public:
     virtual void SetData(void * data) = 0;
     virtual const void * GetData() const = 0;
     virtual TYPE_ID GetType() const = 0;
+    virtual size_t GetSize() const = 0;
 };
 
 class WholeCell : public ICell
@@ -17,6 +18,7 @@ public:
     virtual void SetData(void * data) override;
     virtual const void * GetData() const override;
     virtual TYPE_ID GetType() const override;
+    virtual size_t GetSize() const override;
 private:
     size_t m_Data;
 };
@@ -28,6 +30,7 @@ public:
     virtual void SetData(void * data) override;
     virtual const void * GetData() const override;
     virtual TYPE_ID GetType() const override;
+    virtual size_t GetSize() const override;
 private:
     double m_Data;
 };
@@ -39,6 +42,7 @@ public:
     virtual void SetData(void * data) override;
     virtual const void * GetData() const override;
     virtual TYPE_ID GetType() const override;
+    virtual size_t GetSize() const override;
 private:
     std::string m_Data;
 };

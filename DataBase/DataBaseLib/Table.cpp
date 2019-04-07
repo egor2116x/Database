@@ -115,6 +115,9 @@ bool Table::AddRow(const std::vector<ICell *>& row)
 
 void Table::Print(std::ostream & out)
 {
+    out << std::setw(10) << "Table id:" << GetTableInfo().id 
+        << std::setw(10) << " Table: " << GetTableInfo().tableName << std::endl;
+    out << "-----------------------------------------------------------------------" << std::endl;
     for (const auto & field : m_TableColoumNames)
     {
         out << field.first.c_str() << ":" << static_cast<size_t>(field.second) << "\t";
@@ -129,22 +132,24 @@ void Table::Print(std::ostream & out)
             switch (cell->GetType())
             {
             case TYPE_ID::UI_TYPE_ID:
-                out << *(reinterpret_cast<const size_t *>(cell->GetData())) << "\t\t";
+                out << *(reinterpret_cast<const size_t *>(cell->GetData())) << "\t";
                 break;
             case TYPE_ID::D_TYPE_ID:
-                out << *(reinterpret_cast<const double *>(cell->GetData())) << "\t\t";
+                out << *(reinterpret_cast<const double *>(cell->GetData())) << "\t";
                 break;
             case TYPE_ID::AARR_TYPE_ID:
-                out << reinterpret_cast<const char *>(cell->GetData()) << "\t\t";
+                out << reinterpret_cast<const char *>(cell->GetData()) << "\t";
                 break;
             case TYPE_ID::UNKNOWN:
-                out << "????????" << "\t\t";
+                throw DBExeption("Unknown data type");
                 break;
             }
             
         }
         out << std::endl;
     }
+    out << "-----------------------------------------------------------------------" << std::endl;
+    out << std::endl;
 }
 
 bool Table::IsRowStructureCorrect(const std::vector<ICell *>& row) const
@@ -192,28 +197,34 @@ bool Table::CompareCell(ICell * left, ICell * right)
     switch (left->GetType())
     {
     case TYPE_ID::UI_TYPE_ID:
+    {
         size_t dbValue = *(reinterpret_cast<const size_t *>(left->GetData()));
         size_t RequestValue = *(reinterpret_cast<const size_t *>(right->GetData()));
         if (dbValue == RequestValue)
         {
             return true;
         }
+    }
         break;
     case TYPE_ID::D_TYPE_ID:
+    {
         double dbValue = *(reinterpret_cast<const double *>(left->GetData()));
         double RequestValue = *(reinterpret_cast<const double *>(right->GetData()));
         if (dbValue == RequestValue)
         {
             return true;
         }
+    }
         break;
     case TYPE_ID::AARR_TYPE_ID:
-        const char * dbValue = (reinterpret_cast<const char *>(left->GetData()));
-        const char * RequestValue = (reinterpret_cast<const char *>(right->GetData()));
-        if (dbValue == RequestValue)
+    {
+        std::string dbValue = (reinterpret_cast<const char *>(left->GetData()));
+        std::string RequestValue = (reinterpret_cast<const char *>(right->GetData()));
+        if (dbValue.compare(RequestValue) == 0)
         {
             return true;
         }
+    }
         break;
     }
 
@@ -236,22 +247,66 @@ size_t Table::FindCellInRow(const std::vector<ICell*>& row, const RequestData & 
     return idx;
 }
 
-std::vector<ICell*>& Table::CopyRow(const std::vector<ICell*>& row)
+std::vector<ICell*> & Table::CopyRow(const std::vector<ICell*>& row)
 {
-    // TODO: insert return statement here
+    std::unique_ptr<std::vector<ICell*>> newRow(new std::vector<ICell*>);
+    bool isID = true;
+    for (const auto & cell : row)
+    {
+        if (isID) // if ID column skip
+        {
+            isID = false;
+            continue;
+        }
+        switch (cell->GetType())
+        {
+        case TYPE_ID::UI_TYPE_ID:
+        {
+            newRow->push_back(new WholeCell(*(reinterpret_cast<const size_t *>(cell->GetData()))));
+        }
+        break;
+        case TYPE_ID::D_TYPE_ID:
+        {
+            newRow->push_back(new DoubleCell(*(reinterpret_cast<const double *>(cell->GetData()))));
+        }
+        break;
+        case TYPE_ID::AARR_TYPE_ID:
+        {
+            newRow->push_back(new StringCell(reinterpret_cast<const char *>(cell->GetData())));
+        }
+        break;
+        case TYPE_ID::UNKNOWN:
+            throw DBExeption("Unknown data type");
+        }
+    
+    }
+
+    return *newRow.release();
+}
+
+void Table::CreateTableStructure(const std::vector<std::pair<std::string, TYPE_ID>>& tableStructure)
+{
+    for (const auto & fieldHeader : tableStructure)
+    {
+        if (fieldHeader.first.compare("ID") == 0)
+        {
+            continue;
+        }
+        m_TableColoumNames.push_back(std::make_pair(fieldHeader.first, fieldHeader.second));
+    }
 }
 
 Table & Table::Query(const std::vector<RequestData>& requestString)
 {
     TableInfo tableInfo(99999, "Tmp");
-    Table table(tableInfo);
+    std::unique_ptr<Table> table(new Table(tableInfo));
+    table->CreateTableStructure(m_TableColoumNames);
 
     if (requestString.size() > m_TableColoumNames.size())
     {
         throw DBExeption("Incorrect request");
     }
 
-    std::vector<ICell *> newRow;
     bool isRow = true;
     for (const auto & row : m_Data)
     {
@@ -261,22 +316,21 @@ Table & Table::Query(const std::vector<RequestData>& requestString)
             if (idx == -1)
             {
                 isRow = false;
-                break;
             }
 
-            if (CompareCell(row[idx], request.cell))
+            if (!CompareCell(row[idx], request.cell))
             {
-                is
+                isRow = false;
             }
         }
 
         if (isRow)
         {
             auto & newRow = CopyRow(row);
-            table.AddRow(newRow);
-            isRow = false;
+            table->AddRow(newRow);
         }
+        isRow = true;
     }
 
-    return table;
+    return *table.release();
 }
